@@ -1,0 +1,46 @@
+For each microservice:
+1. Move service to: C:\Ecommerce\service_name\
+2. Open that folder in VS Code
+3. python -m venv venv
+4. .\venv\Scripts\activate
+5. pip install flask requests mysql-connector-python python-dotenv
+6. pip freeze > requirements.txt
+7. Create .env (DB settings)
+8. Create db.py
+9. Create app.py
+10. python app.py
+-------------------------------------
+for details:
+
+STEP 1:ex on order_service:
+File → Open Folder → C:\Ecommerce\order_service
+
+STEP 2
+python -m venv venv
+
+STEP 3
+.\venv\Scripts\activate
+
+STEP 4
+pip install flask requests mysql-connector-python python-dotenv
+
+STEP 5
+pip freeze > requirements.txt
+
+STEP 6: Add .gitignore
+Create a file named .gitignore inside the service folder:
+venv/
+__pycache__/
+.env
+*.pyc
+
+STEP 7: Create .env
+File: C:\Ecommerce\order_service\.env :
+DB_HOST=localhost
+DB_PORT=3303
+DB_USER=ecommerce_user
+DB_PASS=secure_password
+DB_NAME=ecommerce_system
+
+STEP 8: Run the service
+python app.py
