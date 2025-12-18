@@ -49,7 +49,9 @@ def calculate_price():
                 response.raise_for_status()
                 product_data = response.json()
             except requests.RequestException as e:
-                return jsonify({"error": f"Failed to fetch product {product_id} from Inventory Service in Pricing service: {str(e)}"}), 500
+                error_data = response.json()
+                error_msg = error_data.get("error", "Unknown error")
+                return jsonify({"error": f"Failed to fetch product {product_id} from Inventory Service in Pricing: {error_msg}"}), 500
 
             unit_price = Decimal(str(product_data.get("unit_price", "0")))
             base_price = unit_price * quantity

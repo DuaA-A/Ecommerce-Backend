@@ -22,7 +22,9 @@ def validate_order(data):
             response.raise_for_status()
             product = response.json()
         except requests.RequestException as e:
-            return {"error": f"Failed to fetch product {p['product_id']} from Inventory Service: {str(e)}"}, 500
+            error_data = response.json()
+            error_msg = error_data.get("error", "Unknown error")
+            return {"error": f"Failed to fetch product {p['product_id']} from Inventory Service: Product not found!"}, 500
 
         p_quantity = int(p["quantity"])
 
@@ -46,10 +48,13 @@ def create_order(data):
         response.raise_for_status()
         pricing_res = response.json()
     except requests.RequestException as e:
-        return {"error": f"Failed to get products prices from Pricing Service: {str(e)}"}, 500
+        error_data = response.json()
+        error_msg = error_data.get("error", "Unknown error")
+        return {"error": f"Failed to get products prices from Pricing Service: {error_msg}"}, 500
 
     items = pricing_res["items"]
-    items_lookup = {item["product_id"]                    : item for item in items}  # restructure as map
+    items_lookup = {item["product_id"]
+        : item for item in items}  # restructure as map
 
     cursor.execute(
         "INSERT INTO orders (customer_id, total_amount) VALUES (%s, %s)",
@@ -72,7 +77,9 @@ def create_order(data):
             response.raise_for_status()
             product = response.json()
         except requests.RequestException as e:
-            return {"error": f"Failed to update products to Inventory Service: {str(e)}"}, 500
+            error_data = response.json()
+            error_msg = error_data.get("error", "Unknown error")
+            return {"error": f"Failed to update products to Inventory Service: {error_msg}"}, 500
 
         cursor.execute(
             "INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES (%s, %s, %s, %s)",
