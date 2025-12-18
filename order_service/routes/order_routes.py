@@ -5,6 +5,8 @@ from services.order_service import (
     get_order
 )
 order_bp = Blueprint("orders", __name__, url_prefix="/api/orders")
+
+
 @order_bp.route("/create", methods=["POST"])
 def create():
     data = request.get_json()
@@ -15,10 +17,15 @@ def create():
 
     order_id = create_order(data)
 
+    if isinstance(order_id, tuple):
+        error, status_code = order_id
+        return jsonify(error), status_code
+
     return jsonify({
         "status": "success",
         "order_id": order_id
     }), 201
+
 
 @order_bp.route("/<int:order_id>", methods=["GET"])
 def get(order_id):

@@ -6,13 +6,14 @@ from decimal import Decimal
 app = Flask(__name__)
 db = mysql.connector.connect(
     host="localhost",
-    user="ecommerce_user",
-    password="1234",  # must match your DB
+    user="root",
+    password="YourNewPassword123!",  # must match your DB
     database="ecommerce_system"
 )
 cursor = db.cursor(dictionary=True)
 
 INVENTORY_SERVICE_URL = "http://127.0.0.1:5002/api/inventory/check"
+
 
 @app.route("/api/pricing/calculate", methods=["POST"])
 def calculate_price():
@@ -30,7 +31,8 @@ def calculate_price():
 
         cursor.execute("SELECT tax_rate FROM tax_rates WHERE region='default'")
         tax_row = cursor.fetchone()
-        tax_rate = Decimal(str(tax_row["tax_rate"])) / Decimal("100") if tax_row else Decimal("0.15")
+        tax_rate = Decimal(str(tax_row["tax_rate"])) / \
+            Decimal("100") if tax_row else Decimal("0.15")
 
         for item in products:
             if "product_id" not in item or "quantity" not in item:
@@ -42,11 +44,12 @@ def calculate_price():
                 return jsonify({"error": "Quantity must be positive"}), 400
 
             try:
-                response = requests.get(f"{INVENTORY_SERVICE_URL}/{product_id}", timeout=5)
+                response = requests.get(
+                    f"{INVENTORY_SERVICE_URL}/{product_id}", timeout=5)
                 response.raise_for_status()
                 product_data = response.json()
             except requests.RequestException as e:
-                return jsonify({"error": f"Failed to fetch product {product_id} from Inventory Service: {str(e)}"}), 500
+                return jsonify({"error": f"Failed to fetch product {product_id} from Inventory Service in Pricing service: {str(e)}"}), 500
 
             unit_price = Decimal(str(product_data.get("unit_price", "0")))
             base_price = unit_price * quantity
@@ -63,7 +66,9 @@ def calculate_price():
             rule = cursor.fetchone()
             discount = Decimal("0.0")
             if rule and rule["discount_percentage"] is not None:
-                discount = base_price * (Decimal(str(rule["discount_percentage"])) / Decimal("100"))
+                discount = base_price * \
+                    (Decimal(str(rule["discount_percentage"])
+                             ) / Decimal("100"))
 
             final_price = base_price - discount
             subtotal += final_price
@@ -88,6 +93,7 @@ def calculate_price():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(port=5003, debug=True)
