@@ -8,6 +8,32 @@ PRICING_SERVICE_URL = "http://127.0.0.1:5003/api/pricing/calculate"
 
 
 def validate_order(data):
+    for p in data["products"]:
+        if "product_id" not in p or "quantity" not in p:
+            return "each product must have product_id and quantity"
+
+        try:
+            response = requests.get(
+                f"{INVENTORY_SERVICE_CHECK_URL}/{p['product_id']}",
+                timeout=5
+            )
+            response.raise_for_status()
+            product = response.json()
+
+        except requests.exceptions.ConnectionError:
+            return "Inventory Service is unavailable", 503
+
+        except requests.exceptions.Timeout:
+            return "Inventory Service timeout", 504
+
+        except requests.exceptions.HTTPError:
+            return f"Product {p['product_id']} not found in inventory", 404
+
+        except requests.RequestException as e:
+            return f"Inventory service error: {str(e)}", 500
+
+        if int(p["quantity"]) > product["quantity"]:
+            return f"Insufficient stock for product {p['product_id']}"
     if "customer_id" not in data:
         return "customer_id is required"
     if "products" not in data or not data["products"]:

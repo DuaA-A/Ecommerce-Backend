@@ -2,7 +2,7 @@
 CREATE DATABASE IF NOT EXISTS ecommerce_system;
 USE ecommerce_system;
 
--- customers 
+-- customers
 CREATE TABLE IF NOT EXISTS customers (
     customer_id INT PRIMARY KEY AUTO_INCREMENT,
     name VARCHAR(100) NOT NULL,
@@ -21,7 +21,7 @@ CREATE TABLE IF NOT EXISTS inventory (
     last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- pricing_rules 
+-- pricing_rules
 CREATE TABLE IF NOT EXISTS pricing_rules (
     rule_id INT PRIMARY KEY AUTO_INCREMENT,
     product_id INT,
@@ -30,13 +30,13 @@ CREATE TABLE IF NOT EXISTS pricing_rules (
     CONSTRAINT fk_pricing_product FOREIGN KEY (product_id) REFERENCES inventory(product_id)
 );
 
--- tax_rates 
+-- tax_rates
 CREATE TABLE IF NOT EXISTS tax_rates (
     region VARCHAR(50) PRIMARY KEY,
     tax_rate DECIMAL(5,2)
 );
 
--- notification_log 
+-- notification_log
 CREATE TABLE IF NOT EXISTS notification_log (
     notification_id INT PRIMARY KEY AUTO_INCREMENT,
     order_id INT,
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS order_items (
     CONSTRAINT fk_items_product FOREIGN KEY (product_id) REFERENCES inventory(product_id)
 );
 
--- Sample seed data 
+-- Sample seed data
 INSERT INTO inventory (product_name, quantity_available, unit_price)
 VALUES ('Laptop',50,999.99),('Mouse',200,29.99),('Keyboard',150,79.99),('Monitor',75,299.99),('Headphones',100,149.99);
 
