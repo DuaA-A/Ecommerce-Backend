@@ -6,7 +6,7 @@ ALTER USER 'order_service'@'localhost'
 IDENTIFIED WITH mysql_native_password
 BY 'Zatona99';
 
-GRANT ALL PRIVILEGES ON order_service.* 
+GRANT ALL PRIVILEGES ON order_service.*
 TO 'order_service'@'localhost';
 FLUSH PRIVILEGES;
 

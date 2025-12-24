@@ -40,7 +40,7 @@ def update():  # will recieve pid,stockchange
     except Exception as e:
         return jsonify({"status": "error", "message": "Database update failed"}), 500
     
-@inventory_bp.route("/all", methods=["GET"])
+@inventory_bp.route("/products", methods=["GET"])
 def get_all():
     products = get_all_products()
     return jsonify(products), 200
