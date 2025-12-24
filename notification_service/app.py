@@ -1,65 +1,94 @@
-# notification_service/app.py
+# app.py
 from flask import Flask, request, jsonify
 import requests
-from db import get_conn
+from db import log_notification
 
 app = Flask(__name__)
 
-@app.get("/health")
-def health():
-    return {"service":"notification","status":"running"}
+# URLs of other services
+CUSTOMER_SERVICE_URL = 'http://localhost:5004'
+INVENTORY_SERVICE_URL = 'http://localhost:5002'  # Not strictly needed now, but kept for future
 
-@app.post("/api/notifications/send")
+@app.route('/api/notifications/send', methods=['POST'])
 def send_notification():
     data = request.get_json()
-    order_id = data.get("order_id")
-    if not order_id:
-        return jsonify({"error":"order_id required"}), 400
 
-    # 1) Get order details from Order Service
-    r = requests.get(f"http://localhost:5001/api/orders/{order_id}")
-    if r.status_code != 200:
-        return jsonify({"error":"Order not found"}), 404
-    order = r.json()
-    customer_id = order.get("customer_id")
+    if not data or 'order_id' not in data:
+        return jsonify({'error': 'order_id is required'}), 400
 
-    # 2) Get customer info
-    r2 = requests.get(f"http://localhost:5004/api/customers/{customer_id}")
-    if r2.status_code != 200:
-        return jsonify({"error":"Customer not found"}), 404
-    customer = r2.json()
-    customer_email = customer.get("email")
+    order_id = data['order_id']
+    customer_id = data.get('customer_id')  # Optional – can be fetched from Customer Service if not provided
 
-    # 3) Check inventory status (for each item)
-    messages = []
-    for item in order.get("items", []):
-        pid = item['product_id']
-        r3 = requests.get(f"http://localhost:5002/api/inventory/check/{pid}")
-        if r3.status_code == 200:
-            prod = r3.json()
-            messages.append(f"{prod['product_name']} is available: {prod['quantity_available']} left")
-        else:
-            messages.append(f"Product {pid} info not available")
-
-    notification_message = f"Order #{order_id} confirmed. Details: " + " | ".join(messages)
-
-    # Log to DB
-    conn = get_conn()
-    cursor = conn.cursor()
     try:
-        cursor.execute("INSERT INTO notification_log (order_id, customer_id, notification_type, message) VALUES (%s,%s,%s,%s)",
-                        (order_id, customer_id, 'order_confirmation', notification_message))
-        conn.commit()
-    finally:
-        cursor.close()
-        conn.close()
+        # Step 1: Get customer information
+        if not customer_id:
+            # If customer_id not provided, you could derive it from Order Service later
+            return jsonify({'error': 'customer_id is required'}), 400
 
-    # Simulate send
-    print(f"EMAIL SENT TO: {customer_email}")
-    print(f"Subject: Order #{order_id} Confirmed")
-    print(f"Body: {notification_message}")
+        cust_resp = requests.get(f"{CUSTOMER_SERVICE_URL}/api/customers/{customer_id}")
+        cust_resp.raise_for_status()
+        customer = cust_resp.json()
 
-    return jsonify({"sent": True})
-    
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5005, debug=True)
+        customer_name = customer.get('name', 'Valued Customer')
+        customer_email = customer.get('email', 'no-email@example.com')
+        customer_phone = customer.get('phone', 'N/A')
+
+        # Step 2: Generate delivery estimate (simulated – you can enhance with Inventory call)
+        delivery_estimate = "3-5 business days"
+
+        # Step 3: Build notification message
+        message = f"""
+Order Confirmation #{order_id}
+
+Dear {customer_name},
+
+Thank you for your order! We're processing it right now.
+
+Estimated delivery: {delivery_estimate}
+
+Contact Details:
+Email: {customer_email}
+Phone: {customer_phone}
+
+We'll notify you when your order ships.
+
+Thank you for shopping with us!
+E-Commerce Team
+        """.strip()
+
+        # Step 4: Simulate sending email/SMS (console output)
+        print("\n" + "="*50)
+        print("SIMULATED NOTIFICATION SENT")
+        print("="*50)
+        print(f"To Email: {customer_email}")
+        print(f"To Phone: {customer_phone}")
+        print(f"Subject: Your Order #{order_id} is Confirmed!")
+        print(f"Message:\n{message}")
+        print("="*50 + "\n")
+
+        # Step 5: Log to database
+        success = log_notification(
+            order_id=order_id,
+            customer_id=customer_id,
+            notification_type='email_sms',
+            message=message
+        )
+
+        if not success:
+            return jsonify({'error': 'Failed to log notification'}), 500
+
+        return jsonify({
+            'status': 'success',
+            'message': 'Notification sent and logged successfully',
+            'order_id': order_id,
+            'customer_id': customer_id
+        }), 200
+
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': f'Failed to contact Customer Service: {str(e)}'}), 500
+    except Exception as e:
+        return jsonify({'error': f'Unexpected error: {str(e)}'}), 500
+
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5005)

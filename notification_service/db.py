@@ -1,25 +1,46 @@
 # db.py
-from dotenv import load_dotenv
-load_dotenv()
-
 import mysql.connector
-from mysql.connector import pooling
-import os
+from mysql.connector import Error
 
 DB_CONFIG = {
-    "host": os.getenv("DB_HOST"),
-    "port": int(os.getenv("DB_PORT")),
-    "user": os.getenv("DB_USER"),
-    "password": os.getenv("DB_PASS"),
-    "database": os.getenv("DB_NAME")
+    'host': 'localhost',
+    'user': 'root',        # change if needed
+    'password': 'tas123//*999',
+    'database': 'ecommerce_system'
 }
 
-cnxpool = pooling.MySQLConnectionPool(
-    pool_name="mypool",
-    pool_size=3,
-    **DB_CONFIG
-)
+def get_db_connection():
+    try:
+        conn = mysql.connector.connect(**DB_CONFIG)
+        return conn
+    except Error as e:
+        print(f"Database connection error: {e}")
+        return None
 
-def get_conn():
-    return cnxpool.get_connection()
-
+def log_notification(order_id, customer_id, notification_type, message):
+    """
+    Insert a notification record into notification_log table
+    Returns True on success, False on failure
+    """
+    conn = get_db_connection()
+    if not conn:
+        return False
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO notification_log 
+            (order_id, customer_id, notification_type, message)
+            VALUES (%s, %s, %s, %s)
+        """, (order_id, customer_id, notification_type, message))
+        
+        conn.commit()
+        return True
+    
+    except Error as e:
+        print(f"Error logging notification: {e}")
+        return False
+    
+    finally:
+        cursor.close()
+        conn.close()
