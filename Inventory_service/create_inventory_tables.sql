@@ -1,6 +1,15 @@
+CREATE USER 'inventory_service'@'localhost'
+IDENTIFIED WITH mysql_native_password
+BY 'Zatona99';
+
+GRANT ALL PRIVILEGES ON inventory_service.* 
+TO 'inventory_service'@'localhost';
+FLUSH PRIVILEGES;
+SELECT user, host FROM mysql.user
+WHERE user = 'inventory_service';
 CREATE DATABASE IF NOT EXISTS inventory_service;
 USE inventory_service;
-
+select * from inventory;
 CREATE TABLE IF NOT EXISTS inventory (
     product_id INT PRIMARY KEY AUTO_INCREMENT,
     product_name VARCHAR(100) NOT NULL,

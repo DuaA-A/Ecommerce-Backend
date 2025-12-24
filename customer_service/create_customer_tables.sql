@@ -14,8 +14,10 @@ CREATE TABLE IF NOT EXISTS customers (
     email VARCHAR(100) UNIQUE NOT NULL,
     phone VARCHAR(20),
     loyalty_points INT DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    password_hash VARCHAR(255) NOT NULL
 );
-
-ALTER TABLE customers
-ADD COLUMN password_hash VARCHAR(255) NOT NULL;
+drop table customers;
+SHOW DATABASES;
+USE customer_service;
+SHOW TABLES;
