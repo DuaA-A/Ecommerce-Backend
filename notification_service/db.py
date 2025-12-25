@@ -4,9 +4,9 @@ from mysql.connector import Error
 
 DB_CONFIG = {
     'host': 'localhost',
-    'user': 'notification_service',
+    'user': 'ecommerce_system',
     'password': 'Zatona99',
-    'database': 'notification_service',
+    'database': 'ecommerce_system',
     'port': 3303
 }
 

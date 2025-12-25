@@ -56,3 +56,14 @@ def update_loyalty_route(customer_id):
 @customer_bp.route("/test", methods=["GET"])
 def test_route():
     return "Blueprint working!"
+
+@customer_bp.route("/api/customers/<int:customer_id>/orders", methods=["GET"])
+def get_customer_orders_route(customer_id):
+    from services.customer_service import get_customer_orders
+    orders = get_customer_orders(customer_id)
+    if not orders:
+        return jsonify({"error": "No orders found for this customer"}), 404
+    # Wrap array in an object
+    return jsonify({"orders": orders}), 200
+
+

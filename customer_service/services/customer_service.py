@@ -84,3 +84,21 @@ def get_all_customers():
         return cursor.fetchall()
     finally:
         cursor.close()
+
+# services/customer_service.py
+
+def get_customer_orders(customer_id):
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute(
+            """
+            SELECT order_id, total_amount, status, created_at
+            FROM orders
+            WHERE customer_id=%s
+            """,
+            (customer_id,)
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
