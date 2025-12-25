@@ -4,6 +4,7 @@ from services.order_service import (
     create_order,
     get_order
 )
+import requests
 order_bp = Blueprint("orders", __name__, url_prefix="/api/orders")
 
 
@@ -14,11 +15,21 @@ def create():
     if error:
         return jsonify({"status": "error", "message": error}), 400
 
-    order_id = create_order(data)
+    result = create_order(data)
 
-    if isinstance(order_id, tuple):
-        error, status_code = order_id
+    if isinstance(result[0], tuple):
+        error, status_code = result[0]
         return jsonify(error), status_code
+
+    order_id, customer_id = result
+
+    req_body = {
+        "order_id": order_id,
+        "customer_id": customer_id
+    }
+    response = requests.post(
+        "http://127.0.0.1:5005/api/notifications/send", json=req_body, timeout=5)
+    response.raise_for_status()
 
     return jsonify({
         "status": "success",

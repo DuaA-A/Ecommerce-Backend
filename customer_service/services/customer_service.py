@@ -67,10 +67,11 @@ def update_loyalty(customer_id, points):
     try:
         cursor.execute(
             "UPDATE customers SET loyalty_points = loyalty_points + %s WHERE customer_id=%s",
-            (points, customer_id)
+            (customer_id,points)
         )
         db.commit()
-        return cursor.rowcount > 0
+        result = cursor.rowcount
+        return result > 0
     finally:
         cursor.close()
 
@@ -80,6 +81,17 @@ def get_all_customers():
     try:
         cursor.execute(
             "SELECT customer_id, name, email, phone, loyalty_points, created_at FROM customers"
+        )
+        return cursor.fetchall()
+    finally:
+        cursor.close()
+
+def customer_orders(customer_id):
+    db = get_db()
+    cursor = db.cursor()
+    try:
+        cursor.execute(
+            "SELECT order_id FROM orders WHERE customer_id =%s",(customer_id,)
         )
         return cursor.fetchall()
     finally:

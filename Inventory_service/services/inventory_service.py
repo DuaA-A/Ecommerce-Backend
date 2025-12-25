@@ -26,19 +26,20 @@ def get_product(product_id):
 
 def validate(data):
     if "product_id" not in data:
-        return "product_id is required"
+        return jsonify({"error": "product_id is required"}), 400
     if "stock_change" not in data:
-        return "stock_change is required"
+        return jsonify({"error": "stock_change is required"}), 400
     try:
         stock_change = int(data["stock_change"])
     except ValueError:
-        return "stock_change must be an integer"
+        return jsonify({"error": "stock_change must be an integer"}), 400
     product = get_product(data["product_id"])
     if not product:
-        return "product not available"
+        return jsonify({"error": "product not available"}), 400
     if product["quantity_available"] + stock_change < 0:
-        return "Insufficient stock"
+        return jsonify({"error": "Insufficient stock"}), 400
     return None
+
 
 def update_inventory(data):
     product_id = data["product_id"]
@@ -56,7 +57,7 @@ def update_inventory(data):
     db.commit()
 
     cursor.execute("SELECT product_id, quantity_available, last_updated "
-                    "FROM inventory WHERE product_id=%s", (product_id,))
+                   "FROM inventory WHERE product_id=%s", (product_id,))
     new_product = cursor.fetchone()
     cursor.close()
 
@@ -65,6 +66,7 @@ def update_inventory(data):
         "quantity_available": int(new_product["quantity_available"]),
         "last_updated": str(new_product["last_updated"])
     }
+
 
 def get_all_products():
     db = get_db()

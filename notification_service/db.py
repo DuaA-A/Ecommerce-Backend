@@ -4,10 +4,10 @@ from mysql.connector import Error
 
 DB_CONFIG = {
     'host': 'localhost',
-    'user': 'notification_service',
-    'password': 'Zatona99',
-    'database': 'notification_service',
-    'port': 3303
+    'user': 'root',
+    'password': 'YourNewPassword123!',
+    'database': 'ecommerce_system',
+    'port': 3306
 }
 
 def get_db_connection():

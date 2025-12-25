@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 import requests
-from services.customer_service import create_customer, login_customer, get_customer, update_loyalty
+from services.customer_service import create_customer, login_customer, get_customer, update_loyalty, customer_orders
 
 customer_bp = Blueprint("customers", __name__)
 
@@ -52,6 +52,17 @@ def update_loyalty_route(customer_id):
     if not updated:
         return jsonify({"error": "Customer not found"}), 404
     return jsonify({"updated": True})
+
+@customer_bp.route("/api/customers/<int:customer_id>/orders", methods=["GET"])
+def customer_orders_route(customer_id):
+    orders = customer_orders(customer_id)
+    if not orders:
+        return jsonify({"order_ids": []}),200
+    
+    order_ids = [order["order_id"] for order in orders]
+    return jsonify({
+        "order_ids": order_ids
+    })
 
 @customer_bp.route("/test", methods=["GET"])
 def test_route():
