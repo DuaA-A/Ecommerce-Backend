@@ -64,15 +64,23 @@ def get_customer(customer_id):
 def update_loyalty(customer_id, points):
     db = get_db()
     cursor = db.cursor()
+    # print("points before: ",points)
     try:
+        cursor.execute("SELECT loyalty_points from customers WHERE customer_id =%s ",(customer_id,))
+        lp = cursor.fetchone()
+        current_lp = lp["loyalty_points"]
         cursor.execute(
             "UPDATE customers SET loyalty_points = loyalty_points + %s WHERE customer_id=%s",
-            (customer_id,points)
+            (points,customer_id)
         )
         db.commit()
         result = cursor.rowcount
-        print( "the result is:",result)
-        return result > 0
+        final_points = int(points)+current_lp
+        # print( "the result is:",result)
+        return {
+            "updated":result > 0,
+            "points":final_points
+        }
     finally:
         cursor.close()
 

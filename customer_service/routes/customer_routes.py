@@ -5,6 +5,8 @@ from services.customer_service import create_customer, login_customer, get_custo
 customer_bp = Blueprint("customers", __name__)
 
 # Register new customer
+
+
 @customer_bp.route("/api/customer/register", methods=["POST"])
 def register_customer_route():
     data = request.get_json()
@@ -23,6 +25,8 @@ def register_customer_route():
         return jsonify({"error": str(e)}), 500
 
 # Login customer
+
+
 @customer_bp.route("/api/customers/login", methods=["POST"])
 def login_customer_route():
     data = request.get_json()
@@ -36,6 +40,8 @@ def login_customer_route():
     return jsonify(customer), 200
 
 # Get customer profile
+
+
 @customer_bp.route("/api/customers/<int:customer_id>", methods=["GET"])
 def get_customer_route(customer_id):
     customer = get_customer(customer_id)
@@ -44,26 +50,30 @@ def get_customer_route(customer_id):
     return jsonify(customer)
 
 # Update loyalty points
+
+
 @customer_bp.route("/api/customers/<int:customer_id>/loyalty", methods=["PUT"])
 def update_loyalty_route(customer_id):
     data = request.get_json()
     points = data.get("points_to_add", 0)
-    # print("loyality points :",points)
+    print("loyality points :",points)
     updated = update_loyalty(customer_id, points)
     if not updated:
         return jsonify({"error": "Customer not found"}), 404
-    return jsonify({"updated": True})
+    return jsonify({"updated": True,"points":updated["points"]})
+
 
 @customer_bp.route("/api/customers/<int:customer_id>/orders", methods=["GET"])
 def customer_orders_route(customer_id):
     orders = customer_orders(customer_id)
     if not orders:
-        return jsonify({"order_ids": []}),200
-    
+        return jsonify({"order_ids": []}), 200
+
     order_ids = [order["order_id"] for order in orders]
     return jsonify({
         "order_ids": order_ids
     })
+
 
 @customer_bp.route("/test", methods=["GET"])
 def test_route():
