@@ -10,7 +10,6 @@ order_bp = Blueprint("orders", __name__, url_prefix="/api/orders")
 @order_bp.route("/create", methods=["POST"])
 def create():
     data = request.get_json()
-
     error = validate_order(data)
     if error:
         return jsonify({"status": "error", "message": error}), 400
@@ -32,5 +31,4 @@ def get(order_id):
     order = get_order(order_id)
     if not order:
         return jsonify({"status": "error", "message": "Order not found"}), 404
-
     return jsonify(order), 200

@@ -9,3 +9,5 @@ class Config:
     MYSQL_PASSWORD = os.getenv("DB_PASSWORD")
     MYSQL_DB = os.getenv("DB_NAME")
     MYSQL_PORT = int(os.getenv("DB_PORT", 3303))
+    INVENTORY_SERVICE_URL = os.getenv("INVENTORY_SERVICE_URL")
+

@@ -9,4 +9,4 @@ class Config:
     MYSQL_USER = os.getenv("DB_USER")
     MYSQL_PASSWORD = os.getenv("DB_PASSWORD")
     MYSQL_DB = os.getenv("DB_NAME")
-    ORDER_SERVICE_URL = os.getenv("ORDER_SERVICE_URL")
+    CUSTOMER_SERVICE_URL = os.getenv("CUSTOMER_SERVICE_URL")

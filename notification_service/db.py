@@ -4,9 +4,10 @@ from mysql.connector import Error
 
 DB_CONFIG = {
     'host': 'localhost',
-    'user': 'root',        # change if needed
-    'password': 'tas123//*999',
-    'database': 'ecommerce_system'
+    'user': 'notification_service',
+    'password': 'Zatona99',
+    'database': 'notification_service',
+    'port': 3303
 }
 
 def get_db_connection():
@@ -29,7 +30,7 @@ def log_notification(order_id, customer_id, notification_type, message):
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO notification_log 
+            INSERT INTO notification_log
             (order_id, customer_id, notification_type, message)
             VALUES (%s, %s, %s, %s)
         """, (order_id, customer_id, notification_type, message))
