@@ -16,8 +16,8 @@ def check(product_id):
     return jsonify(product), 200
 
 #update_stock(product)   update with new quantity,
-@inventory_bp.route("/update",methods=["PUT"])
-def update():  # will recieve pid,stockchange
+@inventory_bp.route("/update", methods=["POST"])
+def update():
     data = request.get_json()
     
     if not data:
@@ -29,17 +29,16 @@ def update():  # will recieve pid,stockchange
 
     try:
         product = update_inventory(data)
-        
         return jsonify({
             "status": "success",
             "product_id": product["product_id"],
             "quantity_available": product["quantity_available"],
             "last_updated": product["last_updated"]
-        }), 201
+        }), 200
         
     except Exception as e:
         return jsonify({"status": "error", "message": "Database update failed"}), 500
-    
+
 @inventory_bp.route("/products", methods=["GET"])
 def get_all():
     products = get_all_products()

@@ -2,89 +2,105 @@ from flask import jsonify
 from app.database import get_db
 import requests
 
-INVENTORY_SERVICE_CHECK_URL = "http://127.0.0.1:5002/api/inventory/check"  # + pid
+INVENTORY_SERVICE_CHECK_URL = "http://127.0.0.1:5002/api/inventory/check"
 INVENTORY_SERVICE_UPDATE_URL = "http://127.0.0.1:5002/api/inventory/update"
 PRICING_SERVICE_URL = "http://127.0.0.1:5003/api/pricing/calculate"
 
 
+# ---------------- VALIDATION ---------------- #
 def validate_order(data):
+    if not data:
+        return "Request body is missing"
+
     if "customer_id" not in data:
         return "customer_id is required"
+
     if "products" not in data or not data["products"]:
         return "products list is required"
 
     for p in data["products"]:
         if "product_id" not in p or "quantity" not in p:
             return "each product must have product_id and quantity"
+
         try:
-            response = requests.get(
-                f"{INVENTORY_SERVICE_CHECK_URL}/{p['product_id']}", timeout=5)
-            response.raise_for_status()
-            product = response.json()
-        except requests.RequestException as e:
-            error_data = response.json()
-            error_msg = error_data.get("error", "Unknown error")
-            return {"error": f"Failed to fetch product {p['product_id']} from Inventory Service: Product not found!"}, 500
+            res = requests.get(
+                f"{INVENTORY_SERVICE_CHECK_URL}/{p['product_id']}",
+                timeout=5
+            )
+            res.raise_for_status()
+            product = res.json()
+        except requests.exceptions.RequestException:
+            return f"Inventory service unavailable for product {p['product_id']}"
 
-        p_quantity = int(p["quantity"])
-
-        if p_quantity > product["quantity_available"]:
-            return f"The required quantity for product {p['product_id']} exceeds the stock availability"
+        if int(p["quantity"]) > product["quantity_available"]:
+            return f"Insufficient stock for product {p['product_id']}"
 
     return None
 
 
+# ---------------- CREATE ORDER ---------------- #
 def create_order(data):
     db = get_db()
     cursor = db.cursor()
 
-    # fetching pricing service to get each product price and total price
-    req_body = {
-        "products": data["products"]
-    }
+    # ---- Call Pricing Service ----
     try:
-        response = requests.post(
-            f"{PRICING_SERVICE_URL}", json=req_body, timeout=5)
-        response.raise_for_status()
-        pricing_res = response.json()
-    except requests.RequestException as e:
-        error_data = response.json()
-        error_msg = error_data.get("error", "Unknown error")
-        return {"error": f"Failed to get products prices from Pricing Service: {error_msg}"}, 500
+        pricing_response = requests.post(
+            PRICING_SERVICE_URL,
+            json={"products": data["products"]},
+            timeout=5
+        )
+        pricing_response.raise_for_status()
+        pricing_data = pricing_response.json()
 
-    items = pricing_res["items"]
-    items_lookup = {item["product_id"]
-        : item for item in items}  # restructure as map
+    except requests.exceptions.ConnectionError:
+        return {"error": "Pricing service is not running"}, 503
 
+    except requests.exceptions.Timeout:
+        return {"error": "Pricing service timeout"}, 504
+
+    except requests.exceptions.RequestException:
+        return {"error": "Failed to contact pricing service"}, 500
+
+    # ---- Insert Order ----
     cursor.execute(
         "INSERT INTO orders (customer_id, total_amount) VALUES (%s, %s)",
-        (data["customer_id"], pricing_res["total"])
+        (data["customer_id"], pricing_data["total"])
     )
     order_id = cursor.lastrowid
 
+    items_map = {i["product_id"]: i for i in pricing_data["items"]}
+
+    # ---- Process Items ----
     for p in data["products"]:
-
         pid = p["product_id"]
-        target_item = items_lookup.get(pid)
+        qty = p["quantity"]
 
-        req_body = {
-            "product_id": p["product_id"],
-            "stock_change": -p["quantity"]
-        }
+        # Update inventory
         try:
-            response = requests.post(
-                f"{INVENTORY_SERVICE_UPDATE_URL}", json=req_body, timeout=5)
-            response.raise_for_status()
-            product = response.json()
-        except requests.RequestException as e:
-            error_data = response.json()
-            error_msg = error_data.get("error", "Unknown error")
-            return {"error": f"Failed to update products to Inventory Service: {error_msg}"}, 500
+            inv_res = requests.post(
+                INVENTORY_SERVICE_UPDATE_URL,
+                json={
+                    "product_id": pid,
+                    "stock_change": -qty
+                },
+                timeout=5
+            )
+            inv_res.raise_for_status()
+        except requests.exceptions.RequestException:
+            return {"error": "Failed to update inventory"}, 500
 
         cursor.execute(
-            "INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES (%s, %s, %s, %s)",
-            (order_id, p["product_id"], p["quantity"],
-             target_item["final_price"])
+            """
+            INSERT INTO order_items (order_id, product_id, quantity, unit_price)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (
+                order_id,
+                pid,
+                qty,
+                items_map[pid]["final_price"]
+            )
         )
 
     db.commit()
@@ -97,11 +113,10 @@ def get_order(order_id):
     db = get_db()
     cursor = db.cursor()
 
-    cursor.execute("SELECT * FROM orders WHERE id=%s", (order_id,))
+    cursor.execute("SELECT * FROM orders WHERE order_id=%s", (order_id,))
     order = cursor.fetchone()
 
     if not order:
-        cursor.close()
         return None
 
     cursor.execute(
@@ -113,11 +128,9 @@ def get_order(order_id):
     cursor.close()
 
     return {
-        "order_id": order["id"],
+        "order_id": order["order_id"],
         "customer_id": order["customer_id"],
         "total_amount": float(order["total_amount"]),
         "created_at": str(order["created_at"]),
-        "products": [
-            {"product_id": item["product_id"], "quantity": item["quantity"]} for item in items
-        ]
+        "products": items
     }
