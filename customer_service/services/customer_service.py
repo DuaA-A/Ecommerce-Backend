@@ -71,6 +71,7 @@ def update_loyalty(customer_id, points):
         )
         db.commit()
         result = cursor.rowcount
+        print( "the result is:",result)
         return result > 0
     finally:
         cursor.close()

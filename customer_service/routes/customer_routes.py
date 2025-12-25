@@ -47,7 +47,8 @@ def get_customer_route(customer_id):
 @customer_bp.route("/api/customers/<int:customer_id>/loyalty", methods=["PUT"])
 def update_loyalty_route(customer_id):
     data = request.get_json()
-    points = data.get("points", 0)
+    points = data.get("points_to_add", 0)
+    # print("loyality points :",points)
     updated = update_loyalty(customer_id, points)
     if not updated:
         return jsonify({"error": "Customer not found"}), 404
